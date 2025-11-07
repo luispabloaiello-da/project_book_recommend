@@ -1,170 +1,321 @@
-# Student Stress Prediction — End-to-End ML Project
+# 📚 Book Recommendation Project — Web Scraping & Content-Based Filtering
 
-> **Links**  
-> **Slides:** → [Student Stress Prediction](https://www.canva.com/design/DAG3FBg1QyA/JIeaf5_BqknLrb2mvHibbw/edit?utm_content=DAG3FBg1QyA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)  
-> **Streamlit app:** → [Student Stress Prediction— Model Explorer (Dropdown Inputs)](https://finalproject-3ayxr2iyk4pzmubour3zpm.streamlit.app/#student-stress-model-explorer) 
-
-## Overview
-This project predicts a student’s **stress level** (multi-class target: `0`, `1`, `2`) from ~20 **numeric survey features** spanning **psychological**, **physiological**, **environmental**, **academic**, and **social** factors.  
-It includes **reproducible EDA**, **leak-free ML pipelines**, **model comparisons**, and a **Streamlit app** for interactive scoring and evaluation.  
-The goal is a full analytics & ML workflow that’s easy for data-analytics students to follow and extend.
+> **Bootcamp context**  
+> 9-week Data Analytics Bootcamp · Project 2  
+> Focus: Web scraping, APIs, data cleaning, basic NLP, and a simple content-based recommender using real-world book data.
 
 ---
 
-## What You’ll Find
-- **Clean EDA & Prep:** distributions, outliers, correlations, **multicollinearity** checks (incl. VIF), **Mutual Information**, and a brief **PCA** summary.  
-- **Modeling:** consistent pipelines (shared preprocessing), multiple classifiers, optional resampling (**SMOTE**), and feature importance/coefficients helpers.  
-- **Comparisons:** accuracy + macro precision/recall/F1, classification reports, **confusion matrices**, and a clear **Top-2 model** selection.  
-- **Deployment:** export of fitted pipelines and a **Streamlit** app for single/batch predictions and on-app evaluation (pattern inspired by a prior “fraud scoring” project template).
+## 1. Overview
+
+This project builds a small **Book Recommendation dataset** by combining:
+
+1. ~**600 books** from **Goodreads – Best Books Ever** (web scraping).
+2. ~**600 books** from **Open Library – Trending** (Search API + work pages).
+
+From these sources we:
+
+- Collect **titles, authors, URLs, ratings, votes, genres, subjects, and years**.
+- Clean and normalize the data into a single dataset.
+- Engineer features like **genres, keyword representations, and TF-IDF-based keywords**.
+- Perform **Exploratory Data Analysis (EDA)**.
+- Prepare the ground for a **content-based recommendation system**.
 
 ---
 
-## Data Snapshot
-From the EDA:
-- **Rows:** ~1,100  
-- **Features:** ~21 (all numeric)  
-- **Missing values:** none  
-- **Duplicates:** none  
-- **Target distribution (`stress_level`):** `{0: 373, 1: 358, 2: 369}` → roughly balanced, so **accuracy** is a fair primary metric.
+## 2. What You’ll Find
 
-> Note: The dataset is for learning; values reflect typical student self-reports (not clinical labels).
+- **Web Scraping (Goodreads)**  
+  Using `requests + BeautifulSoup` to:
+  - Scrape list pages from:  
+    `https://www.goodreads.com/list/show/1.Best_Books_Ever`
+  - Extract (if available): rank, title, author, author URL, average rating, number of ratings, score, votes, book URL, genres, and first published year.
 
----
+- **API Integration (Open Library)**  
+  Using the **Open Library Search API**:
+  - Query:  
+    `trending_score_hourly_sum:[1 TO *] -subject:"content_warning:cover" language:eng -subject:"content_warning:cover" -subject:"content_warning:cover"`
+  - Extract from API: title, authors, ratings, rating count, trending scores, work keys.
+  - Enrich with **book page scraping** to pull **Subjects** as genres.
 
-## Repo Structure
+- **Data Cleaning & Preprocessing**
+  - Remove duplicates and inconsistent records.
+  - Normalize text (titles, authors, genres).
+  - Clean noisy genres (symbols, codes, brackets, etc.).
+  - Standardize ratings to a **0–5 scale**.
+  - Prepare a combined dataset for modeling and recommendations.
 
-```
-final_project/
-├── data/
-│ ├── raw/                          # original files
-│ └── clean/                        # cleaned/processed artifacts
-├── figures/                        # saved figures from EDA
-├── notebooks/
-│ ├── _main_dataset_analysis.ipynb  # EDA & preparation
-│ └── _main_model_training.ipynb    # model training, evaluation, export
-├── lib/
-│ └── functions.py                  # helpers (run_models_with_importances, importance tables, plotting)
-├── my_streamlit_app/
-│ ├── app.py                        # Streamlit app (single/batch predict + evaluation)
-│ ├── pages/01_Compare_Models.py    # optional: side-by-side model comparison page
-│ └── models/
-│ ├── *.pkl                         # exported fitted pipelines (incl. tuned “(best)” variants)
-│ ├── feature_names.pkl             # full training schema (ALL features)
-│ ├── test_set.csv                  # held-out test set for on-app evaluation
-│ └── metrics.json                  # quick accuracy per model
-├── README_StudentStress_DA_UPDATED.md          # detailed EDA notes & findings
-├── README_model_training_results_UPDATED.md    # modeling results & selection details
-└── README.md                                   # this file
-```
+- **Keyword & Feature Engineering**
+  - Build a simple text field from titles and genres.
+  - Use **TF-IDF** to generate **top keywords per book**.
+
+- **EDA**
+  - Top-rated books.
+  - Most frequent authors.
+  - Genre distribution.
+  - Rating vs number of ratings.
+  - Simple correlations.
+  - Optional word cloud of titles + genres.
 
 ---
 
-## Environment & Installation (uv)
+## 3. Data Sources
 
-This project targets Python **3.13** (see `requires-python = ">=3.13"`). If your system default is lower, create the venv with an explicit 3.13 interpreter. 
+1. **Goodreads — Best Books Ever**
+   - Public list pages.
+   - Scraped with polite delays and User-Agent header.
 
-1) **Check you have uv**
+2. **Open Library — Search & Work Pages**
+   - `https://openlibrary.org/search.json`
+   - Sorted by `trending`.
+   - Additional genres/subjects scraped from each work page under **Subjects**.
 
-   `uv --version`
-
-2) **Create & activate a virtual environment**
-
-- **Windows (PowerShell)**
-
-   `uv venv .venv --python 3.13`
-   `.\.venv\Scripts\Activate.ps1`
-
-3) **Install dependencies (choose one profile)**
-
-   A) **Production (app + inference only)**
-   - Installs the minimal set to run the Streamlit app and unpickle pipelines:
-
-      `uv pip install -r requirements-dev.txt`
-
-   >  Alternative: if you prefer installing from pyproject.toml, run:
-      
-   >   `uv sync`
-
-   -  This will install everything declared there (includes Jupyter and ipykernel). Use this only if you want notebooks in the same env.
-
-4) **Optional system dependency**
-
-- **Graphviz** system binary (for certain visualizations) may be required separately from `graphviz` Python bindings depending on your OS.
+> All scraping/API usage follows the educational intent of the bootcamp project.
 
 ---
 
-## End-to-End Workflow
-1) **EDA & Preparation** (`notebooks/_main_dataset_analysis.ipynb`)  
-   - Univariate distributions (skew, mean vs median)  
-   - Bivariate feature vs stress (box/violin, group stats)  
-   - Correlation (feature–feature & feature–target) + multicollinearity scanning  
-   - Outliers (IQR / z-score)  
-   - **Mutual Information** (non-linear relevance)  
-   - **PCA** for variance explanation (optional dimensionality reduction)  
-   _All steps include concise what/why/how notes for teaching clarity._
+## 4. Repo Structure (Suggested)
 
-2) **Modeling** (`notebooks/_main_model_training.ipynb`)  
-   - Leak-free pipelines with shared preprocessing evaluated across:  
-     **KNN, Logistic Regression, Decision Tree, Random Forest, Gradient Boosting, AdaBoost**, and **LogReg + SMOTE**.  
-   - Unified evaluation (accuracy, classification report, confusion matrix) and feature importance/coefficients where available.
-
-3) **Export & Deploy**  
-   - A final cell saves each **fitted pipeline** (`*.pkl`), the training **feature schema** (`feature_names.pkl`), the **test set** CSV, and a **metrics** JSON.  
-   - The **Streamlit** app loads these artifacts for single/batch prediction and on-app evaluation.
-
----
-
-## Results (short version)
-**Test Accuracy (top models):**
-- **Random Forest** → best **overall balance** (Acc. 0.8955, Macro F1 0.8953)
-- **Logistic Reg + RUS** → Acc. **0.8909**, simplest to explain, good class-0 recall
-- **Logistic Reg + SMOTE** → Acc. **0.8909**, best recall on stressed classes (1, 2)
-- **Gradient Boosting + hiperparam** → Acc. 0.8955
-- Confusion matrices: mostly diagonal, only 1 ↔ 2 mix
-- Top features consistent across models
-
-
-**What the top-features say (recurring signals):**  
-High association with stress appeared for: **blood_pressure, sleep_quality, social_support, anxiety_level, depression, self_esteem, bullying, academic_performance, study_load, future_career_concerns**.  
-*(Direction depends on feature; e.g., self-esteem often decreases as stress increases.)*
-
-> **Why these two?**  
-They showed the best overall balance across classes (macro metrics) with strong recall on stressed classes while maintaining solid precision.
-
----
-
-## How to Reproduce
-**Environment:** Python 3.10+ · `pandas` · `numpy` · `scikit-learn` · `imbalanced-learn` · `matplotlib` · `joblib` · `streamlit`
-
-**Steps**
-1. **Run EDA**: open `_main_dataset_analysis.ipynb`, execute all cells, check that the snapshot matches the counts above.  
-2. **Train models**: open `_main_model_training.ipynb`, run the training & evaluation cells (e.g., `run_models_with_importances(...)`) and review comparisons.  
-3. **Export for Streamlit**: run the final **“Streamlit Export Setup (Stress)”** cell → writes `*.pkl`, `feature_names.pkl`, `test_set.csv`, and `metrics.json` into `my_streamlit_app/models/`.  
-4. **Launch the app (local)**:
-   ```bash
-   cd my_streamlit_app
-   pip install -r requirements.txt
-   streamlit run app.py
-
-> Run the export **after** training so all fitted pipelines (e.g., AdaBoost) are in memory to be saved.
-
----
-
-## Streamlit App
-**Local usage**
 ```bash
-cd my_streamlit_app
-pip install -r requirements.txt
-streamlit run app.py
+project_book_recommend/
+├── data/
+│   │
+│   ├── goodreads_best_books_600.csv
+│   ├── openlibrary_trending_600.csv
+│   └── books_merged_cleaned.csv
+├── figures/
+│   ├── eda_rating_distribution.png
+│   ├── eda_top_authors.png
+│   ├── eda_top_genres.png
+│   ├── eda_rating_vs_num_ratings.png
+│   └── eda_wordcloud_titles_genres.png
+├── notebooks/
+│   ├── scrape_goodreads_best_books_ever.ipynb
+│   ├── scrape_openLibrary_trending_api.ipynb
+│   └── books_data_cleaning_eda.ipynb
+└── README.md
 ```
 
 ---
 
-## Authors:
+## 5. Environment & Setup
 
-- **Luis Pablo Aiello** — Data Analytics Student (Cohort Sep-2025)
+**Recommended packages:**
+
+- `pandas`
+- `numpy`
+- `requests`
+- `beautifulsoup4`
+- `matplotlib`
+- `scikit-learn`
+- `wordcloud` (optional, for EDA word cloud)
+
+Install (example):
+
+```bash
+pip install pandas numpy requests beautifulsoup4 matplotlib scikit-learn wordcloud
+```
+
+Then run the notebooks in order:
+
+1. `scrape_goodreads_best_books_ever.ipynb`
+2. `scrape_openLibrary_trending_api.ipynb`
+3. `books_data_cleaning_eda.ipynb`
 
 ---
 
-## License
-Educational use within the bootcamp cohort; dataset is survey-based and used for learning purposes.
+## 6. Workflow Summary
+
+### Step 1 — Scraping Goodreads
+
+- Loop over the **Best Books Ever** list pages.
+- Extract:
+  - Book title & URL
+  - Author name & URL
+  - Average rating
+  - Number of ratings
+  - Score & votes
+  - List rank
+- For each book page:
+  - Extract **Genres** (new layout tags).
+  - Extract **First published year** from book details.
+
+### Step 2 — Open Library via API + Subjects
+
+- Call `search.json` with the trending query.
+- Extract:
+  - Title, author(s)
+  - Ratings average & count (if available)
+  - `trending_score_hourly_sum`
+  - Work key → build book URL.
+- For each work URL:
+  - Parse the **Subjects** block as genres.
+
+### Step 3 — Merge & Clean
+
+- Add a `source` column (`goodreads` / `openlibrary`).
+- Align columns between both datasets.
+- Concatenate into a single DataFrame.
+
+### Step 4 — Data Cleaning, Feature Engineering & EDA
+
+---
+
+## 7. Key Steps Explained
+
+### 5. Normalize genres
+
+**What problem are we solving?**
+
+After scraping, the `genres` column is messy:
+
+- Some rows are empty.
+- Some look like: `"Fantasy, Young Adult, Adventure"`.
+- Others include subjects, noise, codes (`nyt:...`, `[fic]`, `pz7.1...`), or weird punctuation.
+- We also saw strange list-like strings with brackets and repeated values.
+
+That makes it hard to count genres or use them for recommendations.
+
+**What do we do?**
+
+For each row:
+
+1. Make sure `genres` exists and convert to lowercase text.
+2. Remove brackets `[]`, quotes `'`, and other list-like artifacts.
+3. Replace separators like `/`, `&`, `=`, `--`, `-` with spaces so they don’t break words.
+4. Split mainly by commas to get candidate genres/subjects.
+5. Clean each candidate:
+   - Keep only letters and spaces.
+   - Remove very short or junk tokens.
+   - Drop obvious technical codes like tags starting with `nyt`, `collectionid`, `pz`, etc.
+6. Remove duplicates inside each book’s genre list.
+
+**End result**
+
+Each book gets a **clean list of genres**, for example:
+
+```text
+"Fantasy, Young Adult, Adventure"
+→ ["fantasy", "young adult", "adventure"]
+```
+
+This makes it much easier to:
+
+- Count how many books belong to each genre.
+- Plot genre distributions.
+- Use genres as features in a recommender.
+
+---
+
+### 8. Text for TF-IDF Keywords
+
+**What problem are we solving?**
+
+We want to extract “keywords” that describe each book, but:
+
+- We don’t always have rich descriptions.
+- We do have **titles** and **genres/subjects**.
+
+So we build a simple combined text field to represent each book.
+
+**What do we do?**
+
+For each book:
+
+1. Take the title (or `""` if missing).
+2. Add a space.
+3. Add the genres string.
+4. Convert everything to lowercase.
+
+Example:
+
+```text
+title:  "The Hunger Games"
+genres: "young adult, dystopia, fiction"
+
+→ "the hunger games young adult, dystopia, fiction"
+```
+
+We store this in a column like `text_for_keywords`.
+
+**Why this is useful**
+
+- This gives us one compact “summary text” per book.
+- We can feed this into TF-IDF to find meaningful words.
+- It’s a simple and realistic approach for a bootcamp-level project.
+
+---
+
+### 9. TF-IDF Keyword Extraction
+
+Now we use **TF-IDF** to turn that text into keywords.
+
+**What is TF-IDF (simple version)?**
+
+- **TF (Term Frequency)**: Words that appear more often in a book’s text are more important for that book.
+- **IDF (Inverse Document Frequency)**: Words that appear in many books (like “book”, “novel”) are less special.
+- **TF-IDF** is high when:
+  - A word is frequent in one book’s text.
+  - But not so common across all books.
+
+So TF-IDF helps us find **specific, meaningful words** for each book.
+
+**What does the code do?**
+
+1. Use `TfidfVectorizer` on `text_for_keywords`:
+   - Limit to a small number of features (e.g. 50) to keep it simple.
+   - Use English stopwords to ignore very common words.
+
+2. For each book:
+   - Look at its TF-IDF scores.
+   - Sort words from highest to lowest score.
+   - Pick the top few words (e.g. 5) with TF-IDF > 0.
+
+3. Save them as `top_keywords`, for example:
+
+```text
+"dystopia, survival, rebellion, future, young"
+```
+
+**Why this is useful**
+
+- These `top_keywords` act like a mini “fingerprint” of each book.
+- We can later:
+  - Compare books by overlapping keywords.
+  - Build a simple content-based recommender:
+    - “If you liked this book, here are others with similar genres/keywords.”
+
+---
+
+## 8. EDA Highlights
+
+Using the cleaned dataset, we:
+
+- Plot **rating distribution (0–5)**.
+- Show **Top 10 most frequent authors**.
+- Plot **Top 15 genres** (after genre normalization).
+- Visualize **Rating vs Number of Ratings** (with log-scale on counts).
+- Compute basic **correlations** between ratings, votes, and trending scores.
+- Generate a **word cloud** from `text_for_keywords`.
+
+All plots are also saved into the `figures/` directory for easy use in the presentation or report.
+
+---
+
+## 9. Next Steps (Future Work)
+
+- Implement a **Content-Based Recommender** using:
+  - Cleaned genres.
+  - `top_keywords` from TF-IDF.
+  - Similarity measures (e.g. cosine similarity).
+- Add simple search & filter:
+  - By genre, rating, popularity, etc.
+- (Optional) Wrap the recommender in:
+  - A Jupyter demo notebook, or
+  - A small Streamlit app.
+
+---
+
+## 10. Authors
+
+- **Luis Pablo Aiello** — Data Analytics Bootcamp Student
