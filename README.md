@@ -79,7 +79,6 @@ From these sources we:
 ```bash
 project_book_recommend/
 ├── data/
-│   │
 │   ├── goodreads_best_books_600.csv
 │   ├── openlibrary_trending_600.csv
 │   └── books_merged_cleaned.csv
