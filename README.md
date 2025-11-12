@@ -1,8 +1,12 @@
 # 📚 Book Recommendation Project — Web Scraping & Content-Based Filtering
 
 > **Bootcamp context**  
-> 9-week Data Analytics Bootcamp · Project 2  
-> Focus: Web scraping, APIs, data cleaning, basic NLP, and a simple content-based recommender using real-world book data.
+> 9-week Data Analytics Bootcamp ·
+> Focus: Web scraping, APIs, data cleaning, unsupervised learning, and a simple content-based recommender using real-world book data.
+
+## Slides
+
+- [Book Recommendation System](https://www.canva.com/design/DAG4Xyd8ELI/92lvv1QURGM2MgTsUDFjRw/edit?utm_content=DAG4Xyd8ELI&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ---
 
@@ -74,7 +78,7 @@ From these sources we:
 
 ---
 
-## 4. Repo Structure (Suggested)
+## 4. Repo Structure
 
 ```bash
 project_book_recommend/
@@ -83,15 +87,23 @@ project_book_recommend/
 │   ├── openlibrary_trending_600.csv
 │   └── books_merged_cleaned.csv
 ├── figures/
+│   ├── book_clusters_k_means_genres_text_visualized_pca.png
 │   ├── eda_rating_distribution.png
 │   ├── eda_top_authors.png
 │   ├── eda_top_genres.png
 │   ├── eda_rating_vs_num_ratings.png
-│   └── eda_wordcloud_titles_genres.png
+│   ├── eda_wordcloud_titles_genres.png
+│   └── hierarchical_clustering_dendrogram.png
+├── my_stremlit_app/
+│   └── app.py
 ├── notebooks/
+│   ├── books_data_cleaning_eda.ipynb
+│   ├── content_based_recommender.ipynb
 │   ├── scrape_goodreads_best_books_ever.ipynb
-│   ├── scrape_openLibrary_trending_api.ipynb
-│   └── books_data_cleaning_eda.ipynb
+│   └── scrape_openLibrary_trending_api.ipynb
+├── slides/
+│   └── 
+└── .gitattributes
 └── README.md
 ```
 
@@ -120,6 +132,7 @@ Then run the notebooks in order:
 1. `scrape_goodreads_best_books_ever.ipynb`
 2. `scrape_openLibrary_trending_api.ipynb`
 3. `books_data_cleaning_eda.ipynb`
+4. `content_based_recommender.ipynb`
 
 ---
 
@@ -241,7 +254,6 @@ We store this in a column like `text_for_keywords`.
 
 - This gives us one compact “summary text” per book.
 - We can feed this into TF-IDF to find meaningful words.
-- It’s a simple and realistic approach for a bootcamp-level project.
 
 ---
 
@@ -318,3 +330,9 @@ All plots are also saved into the `figures/` directory for easy use in the prese
 ## 10. Authors
 
 - **Luis Pablo Aiello** — Data Analytics Bootcamp Student
+
+---
+
+## License
+This project is intended for **educational use within the bootcamp cohort**.
+The dataset is built from publicly available book information (Goodreads and Open Library) and is used solely for learning, exploration, and demonstration purposes.

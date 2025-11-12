@@ -141,7 +141,7 @@ if "text_for_keywords" not in df.columns:
 
 df["text_for_keywords"] = df["text_for_keywords"].fillna("").astype(str).str.lower()
 
-max_features = 100  # small number for speed in Streamlit demo
+max_features = 50  # small number for speed in Streamlit demo
 
 vectorizer = TfidfVectorizer(
     max_features=max_features,
