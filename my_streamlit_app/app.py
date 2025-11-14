@@ -162,7 +162,7 @@ X = hstack([X_genres, tfidf_matrix])
 # -------------------------
 
 # We'll use a small k just to show in which cluster a book lands.
-k = 5
+k = 4
 kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
 cluster_labels = kmeans.fit_predict(X)
 
